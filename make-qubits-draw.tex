@@ -1,0 +1,116 @@
+\include{preamble}
+
+\title{How to make qubits draw}
+
+\author{Alexis Toumi\thanks{\href{alexis@toumi.email}{\texttt{alexis@toumi.email}}}}
+
+\addbibresource{make-qubits-draw.bib}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We introduce a framework for the generation of visual art with quantum computers.
+Our approach builds on the recent development of quantum natural language processing (QNLP) defined as a structure-preserving translatio from grammar to parameterised quantum circuits.
+Going from one-dimensional text to two-dimensional drawing, we define a formal grammar for pictorial composition where the two basic rules are horizontal and vertical juxtaposition.
+We then encode each application of a grammatical rule as a piece of quantum circuit, so that composing these pieces together results in a quantum circuit that computes an artistic judgement of the composition.
+Finally, we train this quantum artistic judgement, i.e. we optimise the parameters of the quantum circuits, via reinforcement learning from human feedback.
+
+Compared to the now mainstream use of classical deep learning for text-to-image generation (e.g. DALL-E, Midjourney, Stable Difusion, etc.) the advantage of our QNLP approach to the generation of visual art is two-fold: expressivity and explainability.
+First, we show that quantum computers can in theory be used to express artistic judgements beyond what is possible classically.
+Then, we argue that the compositionality of our approach allows to move away from black-box models and gets us closer to explainable artificial intelligence.
+Our framework builds upon solid mathematical foundations in terms of category theory and the intuitive concept of string diagram, it also comes with an open source implementation using the DisCoPy library.
+\end{abstract}
+
+\section*{Introduction}
+
+Recent years have seen the explosion of deep learning for text-to-image generation with models such as DALL-E, Midjourney and Stable Difusion demonstrating impressive results and generating a new wave of popular enthusiasm for artificial intelligence (AI).
+While these models have opened up new possibilities for visual art creation, the black box nature of their billions of parameters trained on billions of examples comes at a price.
+On the ethical side, they have been criticised for being trained on artworks without the consent of the artists.
+On the aesthetic side moreover, their opacity limits the ability of artists to incorporate their own preferences into the generated artwork.
+We argue that artists should seek to open the black box and work with explainable artificial intelligence (XAI)~\cite{AdadiBerrada18}.
+
+While today's deep learning art is all big data and no explainable structure, the work of generative art pioneer Georg Nees was based on computer programs with artfully crafted structure fed with random data~\cite{BodenEdmonds09}.
+This can be understood as the opposition between two dual principles for AI: distributional and compositional semantics.
+On one hand, distributional semantics defines the meaning of words from the contexts in which they appear, i.e. their distribution in large datasets.
+It is the fundamental principle behind deep learning and the connectionist approach to AI.
+On the other, compositional semantics defines the meaning of sentences as a function of the meaning of words, and of the grammatical rules used to compose them.
+It is at the basis of the symbolic approach, also called good old-fashioned AI~\cite{Haugeland89}.
+
+DisCoCat (Categorical Compositional Distributional) models~\cite{ClarkEtAl10} combine the best of both worlds with the help of category theory, a general theory of mathematical structures and the translations between them.
+Abstractly, DisCoCat models are monoidal functors from grammar to vector spaces.
+Concretely, each word is assigned a vector which captures its distributional meaning and the model computes the meaning of sentences by composing these vectors according to their grammatical structure.
+This form of applied category theory~\cite{Bradley18} relies heavily on string diagrams to combine mathematical rigour and graphical intuition.
+The same string diagrams have also been used as a high-level language to formalise quantum mechanics in such an intuitive way that it could be taught in kindergarten~\cite{Coecke05}.
+In both quantum mechanics and natural language, string diagrams allow to reason visually about information flow, be it between words in a sentence or gates in a quantum circuit.
+In fact, the same graphical equation ``zig-zag equals straight line equals zag-zig'':
+\begin{center}
+\input{imgs/snake-equation.tikz}
+\end{center}
+can be used to formalise both grammatical links between words and entanglement between qubits.
+This grammar-as-entanglement analogy has led to the recent development of quantum natural language processing (QNLP)~\cite{MeichanetzidisEtAl20a,CoeckeEtAl20,CoeckeEtAl22,Toumi22a} and to its implementation on quantum hardware~\cite{LorenzEtAl21,MeichanetzidisEtAl23}.
+
+Miranda et al.~\cite{MirandaEtAl21} used this QNLP framework to implement the first proof-of-concept of a quantum algorithm to generate music.
+In this work, we propose to go from the one-dimensional world of language and music to two-dimensional visual art and show how to make qubits draw.
+In all three applications, the advantage of QNLP over classical methods is two-fold: explainability and expressivity.
+With compositionality at their core, our models are explainable ``white boxes'' with the structure of their input being faithfully encoded in the structure of the quantum circuit that processes it.
+Moreover, quantum computers can express distributions that are believed to be impossible to simulate with classical means~\cite{Aaronson15}.
+While this has been used to demonstrate a theoretical quantum advantage for natural language processing~\cite{ZengCoecke16,WiebeEtAl19}, the noisy intermediate-scale quantum (NISQ)~\cite{Preskill18} machines available today are still far from the size required to outperform the billions of parameters of classical deep learning models.
+
+Yet, artists do not have to wait for large-scale fault-tolerant machines to start incorporating quantum computing into their work.
+Indeed, we demonstrate that it is possible to use a handful of noisy qubits to compose meaningful visual art.
+In fact, we argue that the constraints of NISQ computers may even allow for a greater freedom of artistic expression than is possible with large deep learning models.
+As opposed to the informal practice of prompt engineering,\footnote
+{For example ``prove this theorem in the style of Grothendieck'' or ``paint this scene in the style of Kandinsky''.} we argue that artists should craft their own formal grammar and use it to teach quantum computers how to generate pieces according to their artistic judgement.
+As a minimalist example, we define a formal grammar for pictorial composition based on two basic rules: horizontal and vertical juxtaposition.
+We then translate these two rules in terms of quantum gates so that the resulting circuit evaluates to an artistic judgement of the composition.
+Finally, we can use this quantum artistic judgement to generate new compositions which will be subject to reinforcement learning from human feedback.
+
+The remainder of this paper will be structured as follows:
+\begin{itemize}
+\item section~\ref{grammar} introduces formar grammars and string diagrams for pictorial composition,
+\item section~\ref{quantum} introduces the basics of quantum computing and QNLP for artistic judgement,
+\item section~\ref{discopy} describes the implementation of the framework using the DisCoPy library~\cite{DeFeliceEtAl20} and discusses current experiments in collaboration with generative artists.
+\end{itemize}
+
+\section{A formal grammar for pictorial composition}\label{grammar}
+
+In his lectures on ``Painting and the Question of Concepts''~\cite{Deleuze81}, Deleuze introduces the notion of diagram as the foundation of his philosophy of painting.
+He argues that abstract art is at its core the expression of a binary code: that of horizontal and vertical.
+Let us attempt to formulate this philosophical insight in mathematical terms.
+
+A formal grammar $G$ is defined by a finite set of symbols $G_0$ and a finite set of rules $G_1$ of the form $f : x \to y$, where $x, y \in G_0^\star$ are finite lists of symbols in $G_0$ called the domain and codomain.
+From $G$, we define the set of string diagrams as follows:
+\begin{itemize}
+\item each rule $f : x \to y$ is also a string diagram, drawn as a box with its domain and codomain as wires coming in from the top and out to the bottom,
+\item for each list of symbols $x \in G_0^\star$, the identity $\mathtt{id}(x) : x \to x$ is a string diagram, drawn as parallel wires side by side, and in particular the empty diagram $\mathtt{id}()$ is a string diagram,
+\item for each pair of string diagrams $f : x \to y$ and $g : y \to z$, the composition $f g : x \to z$ is a string diagram drawn as the vertical juxtaposition of $f$ and $g$ with the codomain of the first connected to the domain of the second,
+\item for each pair of string diagrams $f : x \to y$ and $f' : x' \to y'$, the tensor $f \otimes f' : xx' \to yy'$ is a string diagram drawn as the horizontal juxtaposition of $f$ and $f'$.
+\end{itemize}
+String diagrams are subject to the following axioms:
+\begin{itemize}
+\item composition and tensor are unital, i.e. $\mathtt{id}(x) f = f = f \mathtt{id}(y)$ and $\mathtt{id}() \otimes f = f = f \otimes \mathtt{id}()$,
+\item composition and tensor are associative, i.e. $f(gh) = (fg)h$ and $f \otimes (g \otimes h) = (f \otimes g) \otimes h$,
+\item tensor is functorial, i.e. $\mathtt{id}(x) \otimes \mathtt{id}(y) = \mathtt{id}(xy)$ and $(fg) \otimes (f'g') = (f \otimes f')(g \otimes g')$.
+\end{itemize}
+These axioms can be understood intuitively as continuous deformations of two-dimensional pictures:
+\begin{itemize}
+\item unitality allows to make wires shorter or longer and to add empty space anywhere,
+\item associativity allows to stretch string diagrams horizontally and vertically,
+\item functoriality allows to slide boxes up and down, e.g. with $g = \mathtt{id}(y)$ and $f' = \mathtt{id}(x')$ we get:
+\end{itemize}
+\begin{center}
+\input{imgs/interchanger.tikz}
+\end{center}
+
+We can now define the grammatical structure of a sentence, i.e. a list of symbols $w_1 \dots w_n \in G_0$, as a string diagram $f : w_1 \dots w_n \to s$ into a designated sentence symbol $s \in G_0$.
+
+% Kirsch \& Kirsch "The Structure of Paintings: Formal Grammar and Design"\cite{KirschKirsch86}
+
+\section{Quantum-enhanced artistic judgement}\label{quantum}
+\section{Implementation and experiments}\label{discopy}
+
+\printbibliography
+
+\end{document}

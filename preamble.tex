@@ -1,0 +1,47 @@
+%!TEX root = ./make-qubits-draw.tex
+
+\documentclass[11pt]{article}
+\usepackage{geometry}
+ \geometry{
+ a4paper,
+ textwidth=450pt,
+ }
+
+\usepackage{breakurl}
+\usepackage{xcolor}
+
+\usepackage[colorlinks=true,urlcolor=orange,linkcolor=orange,citecolor=orange]{hyperref}
+\usepackage[affil-it]{authblk}
+
+\renewcommand{\familydefault}{cmss}
+
+
+\usepackage[
+    sorting=none,
+    backend=biber,
+    maxbibnames=4,
+    doi=true,
+    isbn=false,
+    url=true
+]{biblatex}
+
+
+% https://tex.stackexchange.com/questions/154864/biblatex-use-doi-only-if-there-is-no-url/154875#154875
+\DeclareSourcemap{
+  \maps[datatype=bibtex]{
+    \map{
+      \step[fieldsource=doi,final]
+      \step[fieldset=url,null]
+      \step[fieldset=urldate,null]
+    }
+    \map{
+      \step[fieldsource=eprint,final]
+      \step[fieldset=url,null]
+      \step[fieldset=urldate,null]
+    }
+  }
+}
+
+\usepackage{amsthm}
+
+\usepackage{tikzit}
