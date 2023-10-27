@@ -2,7 +2,9 @@
 
 \title{How to make qubits draw}
 
-\author{Alexis Toumi\thanks{\href{alexis@toumi.email}{\texttt{alexis@toumi.email}}}}
+\author{Alexis Toumi\thanks{\href{alexis@toumi.email}{\texttt{alexis@toumi.email}}}\\
+Quantinuum – Quantum Compositional Intelligence\\
+17 Beaumont street, OX1 2NA Oxford, UK}
 
 \addbibresource{make-qubits-draw.bib}
 
@@ -12,7 +14,7 @@
 
 \begin{abstract}
 We introduce a framework for the generation of visual art with quantum computers.
-Our approach builds on the recent development of quantum natural language processing (QNLP) defined as a structure-preserving translatio from grammar to parameterised quantum circuits.
+Our approach builds on the recent development of quantum natural language processing (QNLP) defined as a structure-preserving translation from grammar to parameterised quantum circuits.
 Going from one-dimensional text to two-dimensional drawing, we define a formal grammar for pictorial composition where the two basic rules are horizontal and vertical juxtaposition.
 We then encode each application of a grammatical rule as a piece of quantum circuit, so that composing these pieces together results in a quantum circuit that computes an artistic judgement of the composition.
 Finally, we train this quantum artistic judgement, i.e. we optimise the parameters of the quantum circuits, via reinforcement learning from human feedback.
@@ -49,7 +51,7 @@ In fact, the same graphical equation ``zig-zag equals straight line equals zag-z
 \input{imgs/snake-equation.tikz}
 \end{center}
 can be used to formalise both grammatical links between words and entanglement between qubits.
-This grammar-as-entanglement analogy has led to the recent development of quantum natural language processing (QNLP)~\cite{MeichanetzidisEtAl20a,CoeckeEtAl20,CoeckeEtAl22,Toumi22a} and to its implementation on quantum hardware~\cite{LorenzEtAl21,MeichanetzidisEtAl23}.
+This grammar-as-entanglement analogy has led to the recent development of quantum natural language processing (QNLP)~\cite{MeichanetzidisEtAl20a,CoeckeEtAl20,CoeckeEtAl22,Toumi22} and to its implementation on quantum hardware~\cite{LorenzEtAl21,MeichanetzidisEtAl23}.
 
 Miranda et al.~\cite{MirandaEtAl21} used this QNLP framework to implement the first proof-of-concept of a quantum algorithm to generate music.
 In this work, we propose to go from the one-dimensional world of language and music to two-dimensional visual art and show how to make qubits draw.
@@ -77,10 +79,14 @@ The remainder of this paper will be structured as follows:
 \section{A formal grammar for pictorial composition}\label{grammar}
 
 In his lectures on ``Painting and the Question of Concepts''~\cite{Deleuze81}, Deleuze introduces the notion of diagram as the foundation of his philosophy of painting.
-He argues that abstract art is at its core the expression of a binary code: that of horizontal and vertical.
-Let us attempt to formulate this philosophical insight in mathematical terms.
+He argues that at its core, abstract art is the expression of a binary code: that of horizontal and vertical.
+Let us attempt to formulate this philosophical insight in terms of formal grammars and string diagrams.
+To the best of our knowledge, this linguistic approach to visual art goes back to the work of Kirsch~\cite{Kirsch64,KirschKirsch86,KirschKirsch88}.
 
-A formal grammar $G$ is defined by a finite set of symbols $G_0$ and a finite set of rules $G_1$ of the form $f : x \to y$, where $x, y \in G_0^\star$ are finite lists of symbols in $G_0$ called the domain and codomain.
+By a formal grammar $G$\footnote
+{What we call a formal grammar can also be called a semi-Thue system~\cite{Thue14} or a monoidal signature~\cite{Selinger10}.}
+we mean a pair of sets $G_0, G_1$ called symbols and rules with a pair of domain and codomain functions $\mathtt{dom}, \mathtt{cod} : G_1 \to G_0^\star$ from rules to lists of symbols.
+We write $f : x \to y$ for $x = \mathtt{dom}(f)$ and $y = \mathtt{cod}(x)$.
 From $G$, we define the set of string diagrams as follows:
 \begin{itemize}
 \item each rule $f : x \to y$ is also a string diagram, drawn as a box with its domain and codomain as wires coming in from the top and out to the bottom,
@@ -90,23 +96,63 @@ From $G$, we define the set of string diagrams as follows:
 \end{itemize}
 String diagrams are subject to the following axioms:
 \begin{itemize}
-\item composition and tensor are unital, i.e. $\mathtt{id}(x) f = f = f \mathtt{id}(y)$ and $\mathtt{id}() \otimes f = f = f \otimes \mathtt{id}()$,
-\item composition and tensor are associative, i.e. $f(gh) = (fg)h$ and $f \otimes (g \otimes h) = (f \otimes g) \otimes h$,
-\item tensor is functorial, i.e. $\mathtt{id}(x) \otimes \mathtt{id}(y) = \mathtt{id}(xy)$ and $(fg) \otimes (f'g') = (f \otimes f')(g \otimes g')$.
+\item unitality, i.e. $\mathtt{id}(x) f = f = f \mathtt{id}(y)$ and $\mathtt{id}() \otimes f = f = f \otimes \mathtt{id}()$,
+\item associativity, i.e. $f(gh) = (fg)h$ and $f \otimes (g \otimes h) = (f \otimes g) \otimes h$,
+\item interchange, i.e. $\mathtt{id}(x) \otimes \mathtt{id}(y) = \mathtt{id}(xy)$ and $(fg) \otimes (f'g') = (f \otimes f')(g \otimes g')$.
 \end{itemize}
-These axioms can be understood intuitively as continuous deformations of two-dimensional pictures:
+A \emph{monoidal category}\footnote
+{We consider only \emph{strict} monoidal categories, i.e. associativity and unit hold up to equality rather than isomorphism.}
+$\mathbf{C}$ is a formal grammar where rules and symbols are called objects and arrows, together with functions for identity, composition and tensor which satisfy the axioms above.
+For instance, $\mathbf{Set}$ is the category with sets as objects, functions as arrows with the usual notion of identity, composition and the Cartesian product as tensor.
+For a formal grammar $G$, we write $\mathbf{G}$ for the \emph{free monoidal category} where objects are symbols and arrows are string diagrams.
+
+The axioms of monoidal categories can be understood intuitively as continuous deformations of two-dimensional pictures:
 \begin{itemize}
 \item unitality allows to make wires shorter or longer and to add empty space anywhere,
 \item associativity allows to stretch string diagrams horizontally and vertically,
-\item functoriality allows to slide boxes up and down, e.g. with $g = \mathtt{id}(y)$ and $f' = \mathtt{id}(x')$ we get:
+\item interchange allows to slide boxes up and down, e.g. with $g = \mathtt{id}(y)$ and $f' = \mathtt{id}(x')$ we get:
 \end{itemize}
 \begin{center}
 \input{imgs/interchanger.tikz}
 \end{center}
+In fact, the correspondance between the axioms for strict monoidal categories and deformations of two-dimensional pictures goes both way: two string diagrams are equal if and only if they can be deformed continuously into one another without breaking, intersecting or reordering the wires~\cite{JoyalStreet88}.
 
-We can now define the grammatical structure of a sentence, i.e. a list of symbols $w_1 \dots w_n \in G_0$, as a string diagram $f : w_1 \dots w_n \to s$ into a designated sentence symbol $s \in G_0$.
+A \emph{monoidal functor}\footnote
+{We consider ony \emph{strict} monoidal functors, i.e. which respect the tensor up to equality rather than isomorphism.}
+$F : \mathbf{C} \to \mathbf{D}$ is a homomorphism between strict monoidal categories, i.e. a pair of functions from objects to objects and arrows to arrows which respect the domain, codomain, identity, composition and tensor.
+In particular, a monoidal functor $F : \mathbf{G} \to \mathbf{Set}$ is defined by a set $F(x)$ for each symbol $x \in G_0$ and a function $F(f) : F(x_1) \times \dots \times F(x_n) \to F(y_1) \times \dots \times F(y_m)$ for each rule $f : x_1 \dots x_n \to y_1 \dots y_m$.
+It can then be applied to any string diagram by interpreting wires as identity functions, vertical and horizontal juxtaposition as composition and Cartesian product.
 
-% Kirsch \& Kirsch "The Structure of Paintings: Formal Grammar and Design"\cite{KirschKirsch86}
+By a vocabulary we mean a designated subset $V \subseteq G_0$ of symbols called words, by a language we mean a set of lists of words $L \subseteq V^\star$.
+We can now define the language of $G$ as the set $L(G) = \{ w \in V^\star \ \vert \ \exists f : w \to s \}$ of all sentences $w \in V^\star$ with a string diagram $f : w \to s$ from the list of words into a designated sentence symbol $s \in G_0$.
+Such languages are called recursively enumerable, they form the level zero of the Chomsky hierarchy which is the most general class of languages that can be generated by a Turing machine or any computer algorithm~\cite{Chomsky56}.
+Going two levels up in the hierarchy we have context-free grammars, where the rules are restricted to have codomain of length one.
+In this case, the string diagrams are called syntax trees, with the words as leaves and the sentence symbol as root.
+
+We can now define our formal grammar for pictorial composition.
+It has only one symbol $G_0 = \{ x \}$ and two rules $G_1 = \{ h : x x \to x, v : x x \to x \}$ for horizontal and vertical juxtaposition.\footnote
+{Note that here the language is trivial, i.e. every list of symbols $x \dots x$ is a grammatical sentence.
+In fact, we do not care too much about sentences but rather about their grammatical structure, i.e. about string diagrams.
+Traditionally, one may add $h$ and $v$ as symbols and write the rules as $x \to (x h x)$ and $x \to (x v x)$ instead.}
+We formalise this interpretation as the monoidal functor $F : \mathbf{G} \to \mathbf{Set}$ with $F(x) = \mathbb{P}([0, 1] \times [0, 1])$ the set of all black-and-white pictures in the unit square together with the following functions:
+\begin{align*}
+    F(h) : F(x) \times F(x) \to F(x) \quad :: \quad (a, b) \enspace &\mapsto \enspace \{ (i / 2, j) \}_{(i, j) \in a}
+    \enspace \cup \enspace \{ ((i + 1) / 2, j) \}_{(i, j) \in b}\\
+    F(v) : F(x) \times F(x) \to F(x) \quad :: \quad (a, b) \enspace &\mapsto \enspace \{ (i, j / 2) \}_{(i, j) \in a}
+    \enspace \cup \enspace \{ (i, (j + 1) / 2) \}_{(i, j) \in b}
+\end{align*}
+We define a \emph{pictorial composition} as the interpretation $F(f)$ of a string diagram $f : x^{\otimes n} \to x$ in $\mathbf{G}$.
+It can be visualised as a partition of the unit square into $n$ rectangles, for example:
+\begin{center}
+\input{imgs/example.tikz}
+\end{center}
+Note that two different string diagrams $f, f' : x^{\otimes n} \to x$ may have the same interpretation $F(f) = F(f')$.
+For instance, $f = (h \otimes h) v$ and $f' = (v \otimes v) h$ both yield the same $2 \times 2$ grid:
+\begin{center}
+    \input{imgs/grid.tikz}
+\end{center}
+This is in fact another instance of the interchange axiom with $h$ and $v$ in place of composition and tensor.
+Abstractly, we can characterise pictorial compositions as the free magma in the category of magmas, i.e. as the set of $(h, v)$-labeled binary trees quotiented by this interchange axiom.
 
 \section{Quantum-enhanced artistic judgement}\label{quantum}
 \section{Implementation and experiments}\label{discopy}
