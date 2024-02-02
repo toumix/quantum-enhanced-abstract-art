@@ -1,6 +1,4 @@
-# Quantum-enhanced abstract art
-
-## or How to make you qubits draw?
+# How to make you qubits draw?
 
 We introduce a framework for the generation of visual art with quantum computers.
 Our approach builds on the recent development of quantum natural language processing (QNLP) defined as a structure-preserving translation from grammar to parameterised quantum circuits.
